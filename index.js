@@ -353,7 +353,7 @@ getParam(p, v, dd) {
   } else {
     // unit = Number(v) !== NaN ? '' : v.toString().replace(/[^a-z|%]/ig, '');
     unit = Number(v.toString().replace('=', '')).toString() !== 'NaN' ? '' : v.toString().replace(/[^a-z|%]/ig, '');
-    param = d + unit;
+    param = d + (unit || 0);
   }
   return param;
 },
