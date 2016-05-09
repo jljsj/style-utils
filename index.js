@@ -50,6 +50,8 @@ const CSS = {
     transformsBase: ['translate', 'translateX', 'translateY', 'scale', 'scaleX', 'scaleY', 'skewX', 'skewY', 'rotateZ', 'rotate'],
     transforms3D: ['translate3d', 'translateZ', 'scaleZ', 'rotateX', 'rotateY', 'perspective'],
   },
+  filter: ['grayScale', 'sepia', 'hueRotate', 'invert', 'brightness', 'contrast', 'blur'],
+  filterConvert: { grayScale: 'grayscale', hueRotate: 'hue-rotate' },
   transformGroup: { translate: 1, translate3d: 1, scale: 1, scale3d: 1, rotate: 1, rotate3d: 1 },
 
   getGsapType(_p) {
@@ -137,6 +139,39 @@ getArrayToColor(arr) {
   return color + _arr.join(',') + ')';
 },
 
+splitStyle(styleArr){
+  const arr = [];
+  styleArr.forEach(_item => {
+    const _itemArr = _item.split('(');
+  const cssName = _itemArr[0];
+  const data = _itemArr[1];
+  const dataArr = data.replace(')', '').split(',');
+  if (dataArr.length === 1) {
+    return arr.push(_item);
+  }
+  if (cssName.indexOf('translate') >= 0) {
+    arr.push(this.getValues('translateX', dataArr[0]));
+    if (dataArr[1]) {
+      arr.push(this.getValues('translateY', dataArr[1]));
+    }
+    if (cssName === 'translate3d' && dataArr[2]) {
+      arr.push(this.getValues('translateZ', dataArr[2]));
+    }
+  } else if (cssName === 'scale') {
+    arr.push(this.getValues('scaleX', dataArr[0]));
+    arr.push(this.getValues('scaleY', dataArr[1] || dataArr[0]));
+  } else if (cssName === 'skew') {
+    if (dataArr[0]) {
+      arr.push(this.getValues('skewX', dataArr[0]));
+    }
+    if (dataArr[1]) {
+      arr.push(this.getValues('skewY', dataArr[1]));
+    }
+  }
+});
+  return arr;
+},
+
 getTransformStart(name, obj) {
   if (name in obj) {
     return obj[name];
@@ -179,7 +214,7 @@ getTransformStart(name, obj) {
       }
     }
   }
-  return false;
+  return '';
 },
 mergeTransformName(a, b) {
   const belongTransform = this.findStyleByName(a, b);
@@ -195,7 +230,7 @@ mergeTransformName(a, b) {
         return dataArr[0];
     }
   }
-  return false;
+  return null;
 },
 findStyleByName(cssArray, name) {
   let ret = null;
@@ -216,7 +251,42 @@ findStyleByName(cssArray, name) {
   return ret;
 },
 
+strToArray(){
+
+},
+
+mergeStyleNew(current, change){
+  if (!current || current === '') {
+    return change;
+  }
+  if (!change || change === '') {
+    return current;
+  }
+  const _current = current.replace(/\s/g, '').split(')').filter(item=>item !== '' && item).map(item => `${item})`);
+const _change = change.replace(/\s/g, '').split(')').filter(item=>item !== '' && item);
+_change.forEach(changeOnly => {
+  const changeArr = changeOnly.split('(');
+const changeName = changeArr[0];
+const currentSame = this.findStyleByName(_current, changeName);
+if (!currentSame) {
+  _current.push(`${changeOnly})`);
+} else {
+  const index = _current.indexOf(currentSame);
+  _current[index] = `${changeOnly})`;
+}
+});
+_current.forEach((item, i) => {
+  if (item.indexOf('perspective') >= 0 && i) {
+  _current.splice(i, 1);
+  _current.unshift(item);
+}
+})
+return _current.join(' ').trim();
+},
+
+
 mergeStyle(current, change) {
+  // console.log(current,'dsf', change)
   if (!current || current === '') {
     return change;
   }
@@ -238,7 +308,7 @@ mergeStyle(current, change) {
     addArr.push(changeOnlyName + '(' + changeDataArr.join(',') + ')');
   }
 });
-
+  console.log(_current)
   _current.forEach(currentOnly => {
     const currentArr = currentOnly.split('(');
   const currentOnlyName = currentArr[0];
@@ -301,12 +371,29 @@ mergeStyle(current, change) {
   return addArr.join(' ').trim();
 },
 
+
 getValues(p, d, u) {
   return `${p}(${d}${u || ''})`;
 },
 
+getUnit(p, v){
+  const currentUnit = v.toString().replace(/[^a-z|%]/ig, '');
+  let unit = '';
+  if (p.indexOf('translate') >= 0 || p.indexOf('perspective') >= 0) {
+    unit = 'px';
+  } else if (p.indexOf('skew') >= 0 || p.indexOf('rotate') >= 0) {
+    unit = 'deg';
+  }
+  return currentUnit || unit;
+},
+
 isTransform(p) {
   return this._lists.transformsBase.indexOf(p) >= 0 ? 'transform' : p;
+},
+
+isConvert(p){
+  const cssName = this.isTransform(p);
+  return this.filter.indexOf(cssName) >= 0 ? 'filter' : cssName;
 },
 
 getShadowParam(v, d) {
@@ -328,34 +415,21 @@ getShadowParam(v, d) {
 },
 
 getParam(p, v, dd) {
-  const d = Array.isArray(dd) && dd.length === 1 ? dd[0] : dd;
-  if (p.indexOf('color') >= 0 || p.indexOf('Color') >= 0) {
-    return this.getArrayToColor(d);
+  const unit = this.getUnit(p, v);
+  if (!dd && dd !== '' && dd !== 0) {
+    return this.getValues(p, parseFloat(v.toString().replace('=', '')), unit);
   }
-  let unit = '';
-  let param = null;
-  let invalid = true;
-  if (p.indexOf('translate') >= 0 || p.indexOf('perspective') >= 0) {
-    invalid = !/(%|px|em|rem|vw|vh|\d)$/i.test(v);
-    unit = Number(v.toString().replace('=', '')).toString() !== 'NaN' ? 'px' : '';
-    unit = unit || v.toString().replace(/[^a-z|%]/ig, '');
-  } else if (p.indexOf('skew') >= 0 || p.indexOf('rotate') >= 0) {
-    invalid = !/(deg|\d)$/i.test(v);
-    unit = Number(v.toString().replace('=', '')).toString() !== 'NaN' ? 'deg' : '';
-    unit = unit || v.toString().replace(/[^a-z|%]/ig, '');
-  } else if (p.indexOf('scale') >= 0) {
-    invalid = !/(\d)$/i.test(v);
+  const d = Array.isArray(dd) && dd.length === 1 ? dd[0] : dd;
+  if (p.indexOf('translate') >= 0 || p.indexOf('perspective') >= 0 ||
+    p.indexOf('skew') >= 0 || p.indexOf('rotate') >= 0 ||
+    p.indexOf('scale') >= 0) {
+    return this.getValues(p, d, unit)
   } else if (p.indexOf('Shadow') >= 0 || p.indexOf('shadow') >= 0) {
     return this.getShadowParam(v, d);
+  } else if (p.indexOf('color') >= 0 || p.indexOf('Color') >= 0) {
+    return this.getArrayToColor(d);
   }
-  if (!invalid) {
-    param = this.getValues(p, d, unit);
-  } else {
-    // unit = Number(v) !== NaN ? '' : v.toString().replace(/[^a-z|%]/ig, '');
-    unit = Number(v.toString().replace('=', '')).toString() !== 'NaN' ? '' : v.toString().replace(/[^a-z|%]/ig, '');
-    param = d + (unit || 0);
-  }
-  return param;
+  return d + (unit || 0);
 },
 getFilterParam(current, change, data) {
   let unit;
