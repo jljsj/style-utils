@@ -26,4 +26,5 @@ tmp/
 .yml
 _site
 .idea
+.idea/
 main.js
