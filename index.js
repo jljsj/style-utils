@@ -139,7 +139,7 @@ getArrayToColor(arr) {
   return color + _arr.join(',') + ')';
 },
 
-splitStyle(styleArr){
+splitStyle(styleArr) {
   const arr = [];
   styleArr.forEach(_item => {
     const _itemArr = _item.split('(');
@@ -251,11 +251,7 @@ findStyleByName(cssArray, name) {
   return ret;
 },
 
-strToArray(){
-
-},
-
-mergeStyleNew(current, change){
+mergeStyleNew(current, change) {
   if (!current || current === '') {
     return change;
   }
@@ -280,13 +276,12 @@ _current.forEach((item, i) => {
   _current.splice(i, 1);
   _current.unshift(item);
 }
-})
+});
 return _current.join(' ').trim();
 },
 
 
 mergeStyle(current, change) {
-  // console.log(current,'dsf', change)
   if (!current || current === '') {
     return change;
   }
@@ -308,7 +303,6 @@ mergeStyle(current, change) {
     addArr.push(changeOnlyName + '(' + changeDataArr.join(',') + ')');
   }
 });
-  console.log(_current)
   _current.forEach(currentOnly => {
     const currentArr = currentOnly.split('(');
   const currentOnlyName = currentArr[0];
@@ -376,7 +370,7 @@ getValues(p, d, u) {
   return `${p}(${d}${u || ''})`;
 },
 
-getUnit(p, v){
+getUnit(p, v) {
   const currentUnit = v.toString().replace(/[^a-z|%]/ig, '');
   let unit = '';
   if (p.indexOf('translate') >= 0 || p.indexOf('perspective') >= 0) {
@@ -391,7 +385,7 @@ isTransform(p) {
   return this._lists.transformsBase.indexOf(p) >= 0 ? 'transform' : p;
 },
 
-isConvert(p){
+isConvert(p) {
   const cssName = this.isTransform(p);
   return this.filter.indexOf(cssName) >= 0 ? 'filter' : cssName;
 },
@@ -423,7 +417,7 @@ getParam(p, v, dd) {
   if (p.indexOf('translate') >= 0 || p.indexOf('perspective') >= 0 ||
     p.indexOf('skew') >= 0 || p.indexOf('rotate') >= 0 ||
     p.indexOf('scale') >= 0) {
-    return this.getValues(p, d, unit)
+    return this.getValues(p, d, unit);
   } else if (p.indexOf('Shadow') >= 0 || p.indexOf('shadow') >= 0) {
     return this.getShadowParam(v, d);
   } else if (p.indexOf('color') >= 0 || p.indexOf('Color') >= 0) {
