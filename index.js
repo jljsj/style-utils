@@ -1,3 +1,7 @@
+import CSSProperty from 'react/lib/CSSProperty';
+const isUnitlessNumber = CSSProperty.isUnitlessNumber;
+const unquotedContentValueRegex = /^(normal|none|(\b(url\([^)]*\)|chapter_counter|attr\([^)]*\)|(no-)?(open|close)-quote|inherit)((\b\s*)|$|\s+))+)$/;
+
 const IE = (() => {
     if (document.documentMode) {
   return document.documentMode;
@@ -43,35 +47,47 @@ const _hue = (hh, m1, m2)=> {
   const c = (h * 6 < 1) ? m1 + (m2 - m1) * h * 6 : b;
   return (c * 255 + 0.5) | 0;
 };
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
 
-
-const CSS = {
+const cssList = {
   _lists: {
     transformsBase: ['translate', 'translateX', 'translateY', 'scale', 'scaleX', 'scaleY', 'skewX', 'skewY', 'rotateZ', 'rotate'],
     transforms3D: ['translate3d', 'translateZ', 'scaleZ', 'rotateX', 'rotateY', 'perspective'],
   },
   filter: ['grayScale', 'sepia', 'hueRotate', 'invert', 'brightness', 'contrast', 'blur'],
   filterConvert: { grayScale: 'grayscale', hueRotate: 'hue-rotate' },
-  transformGroup: { translate: 1, translate3d: 1, scale: 1, scale3d: 1, rotate: 1, rotate3d: 1 },
+};
+cssList._lists.transformsBase = !(IE <= 9) ? cssList._lists.transformsBase.concat(cssList._lists.transforms3D) : cssList._lists.transformsBase;
 
-  getGsapType(_p) {
+export function createMatrix(style) {
+  return (window.WebKitCSSMatrix && new window.WebKitCSSMatrix(style)) ||
+    (window.MozCSSMatrix && new window.MozCSSMatrix(style)) ||
+    (window.DOMMatrix && new window.DOMMatrix(style)) ||
+    (window.MsCSSMatrix && new window.MsCSSMatrix(style)) ||
+    (window.OCSSMatrix && new window.OCSSMatrix(style)) ||
+    (window.CSSMatrix && new window.CSSMatrix(style)) || null;
+}
+
+export function checkStyleName(p) {
+  const a = ['O', 'Moz', 'ms', 'Ms', 'Webkit'];
+  if (p !== 'filter' && p in document.body.style) {
+    return p;
+  }
+  const _p = p.charAt(0).toUpperCase() + p.substr(1);
+  return `${a.filter(key => `${key}${_p}` in document.body.style)[0] || ''}${_p}`;
+}
+
+export function getGsapType(_p) {
   let p = _p;
   p = p === 'x' ? 'translateX' : p;
   p = p === 'y' ? 'translateY' : p;
   p = p === 'z' ? 'translateZ' : p;
   p = p === 'r' ? 'rotate' : p;
   return p;
-},
+}
 
-parseShadow(v) {
-  let vArr = v.split(' ');
-  const color = this.parseColor(vArr[3]);
-  color[3] = typeof color[3] === 'number' ? color[3] : 1;
-  vArr = vArr.splice(0, 3);
-  return vArr.concat(color);
-},
-
-parseColor(_v) {
+export function parseColor(_v) {
   let a;
   let r;
   let g;
@@ -126,339 +142,177 @@ parseColor(_v) {
     }
   }
   return a;
-},
-
-getArrayToColor(arr) {
-  const color = 'rgba(';
-  const _arr = arr.map((item, i)=> {
-      if (i < 3) {
-    return parseInt(item, 10);
-  }
-  return item;
-});
-  return color + _arr.join(',') + ')';
-},
-
-splitStyle(styleArr) {
-  const arr = [];
-  styleArr.forEach(_item => {
-    const _itemArr = _item.split('(');
-  const cssName = _itemArr[0];
-  const data = _itemArr[1];
-  const dataArr = data.replace(')', '').split(',');
-  if (dataArr.length === 1) {
-    return arr.push(_item);
-  }
-  if (cssName.indexOf('translate') >= 0) {
-    arr.push(this.getValues('translateX', dataArr[0]));
-    if (dataArr[1]) {
-      arr.push(this.getValues('translateY', dataArr[1]));
-    }
-    if (cssName === 'translate3d' && dataArr[2]) {
-      arr.push(this.getValues('translateZ', dataArr[2]));
-    }
-  } else if (cssName === 'scale') {
-    arr.push(this.getValues('scaleX', dataArr[0]));
-    arr.push(this.getValues('scaleY', dataArr[1] || dataArr[0]));
-  } else if (cssName === 'skew') {
-    if (dataArr[0]) {
-      arr.push(this.getValues('skewX', dataArr[0]));
-    }
-    if (dataArr[1]) {
-      arr.push(this.getValues('skewY', dataArr[1]));
-    }
-  }
-});
-  return arr;
-},
-
-getTransformStart(name, obj) {
-  if (name in obj) {
-    return obj[name];
-  }
-  if (name.indexOf('translate') >= 0) {
-    if ('translate' in obj || 'translate3d' in obj) {
-      switch (name) {
-        case 'translateX':
-          return obj.translate.split(',')[0];
-        case 'translateY':
-          return obj.translate.split(',')[1];
-        case 'translateZ':
-          return obj.translate.split(',')[2];
-        default :
-          return null;
-      }
-    }
-  } else if (name.indexOf('rotate') >= 0) {
-    if ('rotate' in obj || 'rotate3d' in obj) {
-      switch (name) {
-        case 'rotateX':
-          return obj.rotate.split(',')[0];
-        case 'rotateY':
-          return obj.rotate.split(',')[1];
-        case 'rotateZ':
-          return obj.rotate.split(',')[2];
-        default :
-          return null;
-      }
-    }
-  } else if (name.indexOf('scale') >= 0) {
-    if ('scale' in obj) {
-      switch (name) {
-        case 'scaleX':
-          return obj.scale.split(',')[0];
-        case 'scaleY':
-          return obj.scale.split(',')[1];
-        default :
-          return null;
-      }
-    }
-  }
-  return '';
-},
-mergeTransformName(a, b) {
-  const belongTransform = this.findStyleByName(a, b);
-  if (belongTransform) {
-    const bArr = belongTransform.split('(');
-    const dataArr = bArr[1].replace(')', '').split(',');
-    switch (b) {
-      case 'translateY' || 'scaleY' || 'rotateY':
-        return dataArr[1];
-      case 'translateZ' || 'rotateZ':
-        return dataArr[2];
-      default :
-        return dataArr[0];
-    }
-  }
-  return null;
-},
-findStyleByName(cssArray, name) {
-  let ret = null;
-  if (cssArray) {
-    cssArray.forEach(_cname=> {
-      if (ret) {
-      return;
-    }
-    const cName = _cname.split('(')[0];
-    const a = (cName in this.transformGroup && name.substring(0, name.length - 1).indexOf(cName) >= 0);
-    const b = (name in this.transformGroup && cName.substring(0, cName.length - 1).indexOf(name) >= 0);
-    const c = cName in this.transformGroup && name in this.transformGroup && (cName.substring(0, cName.length - 2) === name || name.substring(0, name.length - 2) === cName);
-    if (cName === name || a || b || c) {
-      ret = _cname;
-    }
-  });
-  }
-  return ret;
-},
-
-mergeStyleNew(current, change) {
-  if (!current || current === '') {
-    return change;
-  }
-  if (!change || change === '') {
-    return current;
-  }
-  const _current = current.replace(/\s/g, '').split(')').filter(item=>item !== '' && item).map(item => `${item})`);
-const _change = change.replace(/\s/g, '').split(')').filter(item=>item !== '' && item);
-_change.forEach(changeOnly => {
-  const changeArr = changeOnly.split('(');
-const changeName = changeArr[0];
-const currentSame = this.findStyleByName(_current, changeName);
-if (!currentSame) {
-  _current.push(`${changeOnly})`);
-} else {
-  const index = _current.indexOf(currentSame);
-  _current[index] = `${changeOnly})`;
 }
-});
-_current.forEach((item, i) => {
-  if (item.indexOf('perspective') >= 0 && i) {
-  _current.splice(i, 1);
-  _current.unshift(item);
-}
-});
-return _current.join(' ').trim();
-},
 
 
-mergeStyle(current, change) {
-  if (!current || current === '') {
-    return change;
+export function parseShadow(v) {
+  if (!v) {
+    return [0, 0, 0, 0, 0, 0, 0];
   }
-  if (!change || change === '') {
-    return current;
-  }
-  const addArr = [];
-
-  const _current = current.replace(/\s/g, '').split(')').filter(item=>item !== '' && item);
-  const _change = change.replace(/\s/g, '').split(')').filter(item=>item !== '' && item);
-
-  // 如果变动的在旧的里没有，把变动的插回进去；
-  _change.forEach(changeOnly => {
-    const changeArr = changeOnly.split('(');
-  const changeOnlyName = changeArr[0];
-  const changeDataArr = changeArr[1].split(',');
-  const currentSame = this.findStyleByName(_current, changeOnlyName);
-  if (!currentSame) {
-    addArr.push(changeOnlyName + '(' + changeDataArr.join(',') + ')');
-  }
-});
-  _current.forEach(currentOnly => {
-    const currentArr = currentOnly.split('(');
-  const currentOnlyName = currentArr[0];
-
-  const currentDataArr = currentArr[1].split(',');
-  const changeSame = this.findStyleByName(_change, currentOnlyName);
-  // 三种情况，ＸＹＺ时分析，空时组合前面的分析，
-  if (changeSame) {
-    const changeArr = changeSame.split('(');
-    const changeOnlyName = changeArr[0];
-    const changeDataArr = changeArr[1].split(',');
-    if (currentOnlyName === changeOnlyName) {
-      addArr.push(changeSame + ')');
-    } else if (currentOnlyName in this.transformGroup && changeOnlyName.substring(0, changeOnlyName.length - 1).indexOf(currentOnlyName) >= 0) {
-      switch (changeOnlyName) {
-        case 'translateX' || 'scaleX' || 'rotateX':
-          currentDataArr[0] = changeDataArr.join();
-          break;
-        case 'translateY' || 'scaleY' || 'rotateY':
-          currentDataArr[1] = changeDataArr.join();
-          break;
-        case 'translateZ' || 'rotateZ':
-          currentDataArr[2] = changeDataArr.join();
-          break;
-        default :
-          return null;
-      }
-      addArr.push(currentOnlyName + '(' + currentDataArr.join(',') + ')');
-    } else if (changeOnlyName in this.transformGroup && currentOnlyName.substring(0, currentOnlyName.length - 1).indexOf(changeOnlyName) >= 0) {
-      addArr.push(changeOnlyName + '(' + changeDataArr.join(',') + ')');
-    } else if (changeOnlyName in this.transformGroup && currentOnlyName in this.transformGroup && currentOnlyName.substring(0, currentOnlyName.length - 2) === changeOnlyName) {
-      // 如果是3d时,且一个为2d时；
-      switch (changeOnlyName) {
-        case 'translateX' || 'scaleX' || 'rotateX':
-          currentDataArr[0] = changeDataArr[0];
-          break;
-        case 'translateY' || 'scaleY' || 'rotateY':
-          currentDataArr[1] = changeDataArr[1];
-          break;
-        default :
-          return null;
-      }
-      addArr.push(currentOnlyName + '(' + currentDataArr.join(',') + ')');
+  if (v.indexOf('rgb') >= 0) {
+    const t = v.match(/rgb+(?:a)?\((.*)\)/);
+    const s = v.replace(t[0], '').trim().split(' ');
+    const c = t[1].replace(/\s/g, '').split(',');
+    if (c.length === 3) {
+      c.push(1);
     }
-  } else {
-    addArr.push(currentOnlyName + '(' + currentDataArr.join(',') + ')');
+    return s.concat(c);
   }
+  let vArr = v.split(' ');
+  const color = parseColor(vArr[3]);
+  color[3] = typeof color[3] === 'number' ? color[3] : 1;
+  vArr = vArr.splice(0, 3);
+  return vArr.concat(color);
+}
+
+export function getColor(v) {
+  const rgba = v.length === 4 ? 'rgba' : 'rgb';
+  const _vars = v.map((d, i) => i < 3 ? Math.round(d) : d);
+  return `${rgba}(${_vars.join(',')})`;
+}
+
+export function isTransform(p) {
+  return cssList._lists.transformsBase.indexOf(p) >= 0 ? 'transform' : p;
+}
+
+export function isConvert(p) {
+  const cssName = isTransform(p);
+  return cssList.filter.indexOf(cssName) >= 0 ? 'filter' : cssName;
+}
+
+export function splitFilterToObject(data) {
+  if (data === 'none' || !data || data === '') {
+    return null;
+  }
+  const filter = data.replace(' ', '').split(')').filter(item => item);
+  const startData = {};
+  filter.forEach(item => {
+    const dataArr = item.split('(');
+  startData[dataArr[0]] = dataArr[1];
 });
+  return startData;
+}
+
+export function getMatrix(t) {
+  const arr = t.replace(/[a-z|(|)]/g, '').split(',');
+  const m = {};
+  m.m11 = parseFloat(arr[0]);
+  m.m12 = parseFloat(arr[1]);
+  m.m13 = 0;
+  m.m14 = 0;
+  m.m21 = parseFloat(arr[2]);
+  m.m22 = parseFloat(arr[3]);
+  m.m23 = 0;
+  m.m24 = 0;
+  m.m31 = 0;
+  m.m32 = 0;
+  m.m33 = 1;
+  m.m34 = 0;
+  m.m41 = parseFloat(arr[4]);
+  m.m42 = parseFloat(arr[5]);
+  m.m43 = 0;
+  m.m44 = 0;
+  return m;
+}
+
+export function getTransform(transform) {
+  const _transform = transform === 'none' ? 'matrix(1, 0, 0, 1, 0, 0)' : transform;
+  const m = createMatrix(_transform) || getMatrix(_transform);
+  let m11 = m.m11;
+  let m12 = m.m12;
+  let m13 = m.m13;
+  const m14 = m.m14;
+  let m21 = m.m21;
+  let m22 = m.m22;
+  let m23 = m.m23;
+  const m24 = m.m24;
+  let m31 = m.m31;
+  let m32 = m.m32;
+  let m33 = m.m33;
+  let m34 = m.m34;
+  const m43 = m.m43;
+  let t1;
+  let t2;
+  let t3;
+  const tm = {};
+  tm.perspective = m34 ? parseFloat((m33 / (m34 < 0 ? -m34 : m34)).toFixed(3)) : 0;
+  tm.rotateX = parseFloat((Math.asin(m23) * RAD2DEG).toFixed(3));
+  let angle = tm.rotateX * DEG2RAD;
+  const skewX = Math.tan(m.c);
+  const skewY = Math.tan(m.b);
+  let cos = m34 * tm.perspective;
+  let sin;
+  // rotateX
+  if (angle) {
+    cos = Math.cos(-angle);
+    sin = Math.sin(-angle);
+    t1 = m21 * cos + m31 * sin;
+    t2 = m22 * cos + m32 * sin;
+    t3 = m23 * cos + m33 * sin;
+    m31 = m21 * -sin + m31 * cos;
+    m32 = m22 * -sin + m32 * cos;
+    m33 = m23 * -sin + m33 * cos;
+    m34 = m24 * -sin + m34 * cos;
+    m21 = t1;
+    m22 = t2;
+    m23 = t3;
+  }
+  // rotateY
+  angle = Math.atan2(m31, m33);
+  tm.rotateY = angle * RAD2DEG;
+  if (angle) {
+    cos = Math.cos(-angle);
+    sin = Math.sin(-angle);
+    t1 = m11 * cos - m31 * sin;
+    t2 = m12 * cos - m32 * sin;
+    t3 = m13 * cos - m33 * sin;
+    m32 = m12 * sin + m32 * cos;
+    m33 = m13 * sin + m33 * cos;
+    m34 = m14 * sin + m34 * cos;
+    m11 = t1;
+    m12 = t2;
+    m13 = t3;
+  }
+  // rotateZ
+  angle = Math.atan2(m12, m11);
+  tm.rotate = angle * RAD2DEG;
+  if (angle) {
+    cos = Math.cos(-angle);
+    sin = Math.sin(-angle);
+    m11 = m11 * cos + m21 * sin;
+    t2 = m12 * cos + m22 * sin;
+    m22 = m12 * -sin + m22 * cos;
+    m23 = m13 * -sin + m23 * cos;
+    m12 = t2;
+  }
+
+  if (tm.rotateX && Math.abs(tm.rotateX) + Math.abs(tm.rotate) > 359.9) {
+    tm.rotateX = tm.rotate = 0;
+    tm.rotateY += 180;
+  }
+  const rnd = 100000;
+  tm.scaleX = ((Math.sqrt(m11 * m11 + m12 * m12) * rnd + 0.5) | 0) / rnd;
+  tm.scaleY = ((Math.sqrt(m22 * m22 + m32 * m32) * rnd + 0.5) | 0) / rnd;
+  tm.scaleZ = ((Math.sqrt(m23 * m23 + m33 * m33) * rnd + 0.5) | 0) / rnd;
+  // 不管 skewX skewY了；
+  tm.skewX = skewX === -skewY ? 0 : skewX;
+  tm.skewY = skewY === -skewX ? 0 : skewY;
+  tm.perspective = m34 ? 1 / ((m34 < 0) ? -m34 : m34) : 0;
+  tm.translateX = m.m41;
+  tm.translateY = m.m42;
+  tm.translateZ = m43;
+  return tm;
+}
+
+export function stylesToCss(key, value) {
+  let _value;
+  if (!isUnitlessNumber[key] && typeof value === 'number') {
+    _value = ` ${value}px`;
+  } else if (key === 'content' && !unquotedContentValueRegex.test(value)) {
+    _value = `'${value.replace(/'/g, "\\'")}'`;
+}
+return _value || value;
+}
 
 
-  if (!addArr.length) {
-    addArr.push(current, change);
-  }
-  addArr.forEach((item, i) => {
-    if (item.indexOf('perspective') >= 0 && i) {
-    addArr.splice(i, 1);
-    addArr.unshift(item);
-  }
-});
-  return addArr.join(' ').trim();
-},
-
-
-getValues(p, d, u) {
-  return `${p}(${d}${u || ''})`;
-},
-
-getUnit(p, v) {
-  const currentUnit = v.toString().replace(/[^a-z|%]/ig, '');
-  let unit = '';
-  if (p.indexOf('translate') >= 0 || p.indexOf('perspective') >= 0) {
-    unit = 'px';
-  } else if (p.indexOf('skew') >= 0 || p.indexOf('rotate') >= 0) {
-    unit = 'deg';
-  }
-  return currentUnit || unit;
-},
-
-isTransform(p) {
-  return this._lists.transformsBase.indexOf(p) >= 0 ? 'transform' : p;
-},
-
-isConvert(p) {
-  const cssName = this.isTransform(p);
-  return this.filter.indexOf(cssName) >= 0 ? 'filter' : cssName;
-},
-
-getShadowParam(v, d) {
-  let color = [];
-  for (let i = 3; i < d.length; i++) {
-    color.push(d[i]);
-  }
-  color = this.getArrayToColor(color);
-  const vArr = v.split(' ');
-  const blur = [];
-  // 获取单位
-  vArr.forEach((item, ii) => {
-    if (ii < 3) {
-    const unit = item.toString().replace(/[^a-z|%]/ig, '');
-    blur.push(d[ii] + unit);
-  }
-});
-  return blur.join(' ') + ' ' + color;
-},
-
-getParam(p, v, dd) {
-  const unit = this.getUnit(p, v);
-  if (!dd && dd !== '' && dd !== 0) {
-    return this.getValues(p, parseFloat(v.toString().replace('=', '')), unit);
-  }
-  const d = Array.isArray(dd) && dd.length === 1 ? dd[0] : dd;
-  if (p.indexOf('translate') >= 0 || p.indexOf('perspective') >= 0 ||
-    p.indexOf('skew') >= 0 || p.indexOf('rotate') >= 0 ||
-    p.indexOf('scale') >= 0) {
-    return this.getValues(p, d, unit);
-  } else if (p.indexOf('Shadow') >= 0 || p.indexOf('shadow') >= 0) {
-    return this.getShadowParam(v, d);
-  } else if (p.indexOf('color') >= 0 || p.indexOf('Color') >= 0) {
-    return this.getArrayToColor(d);
-  }
-  return d + (unit || 0);
-},
-getFilterParam(current, change, data) {
-  let unit;
-  let changeArr = change.replace(/\s/g, '').split(')').filter(item => item !== '' && item);
-  const currentArr = current.replace(/\s/g, '').split(')').filter(item => item !== '' && item);
-  changeArr = changeArr.map(changeOnly=> {
-      const changeOnlyArr = changeOnly.split('(');
-  const changeOnlyName = changeOnlyArr[0];
-  if (!changeOnlyArr[1]) {
-    return '';
-  }
-  let changeDataArr = changeOnlyArr[1].replace(')', '').split(',');
-  const currentSame = this.findStyleByName(currentArr, changeOnlyName);
-  if (currentSame) {
-    const currentDataArr = currentSame.split('(')[1].replace(')', '').split(',');
-    changeDataArr = changeDataArr.map((dataOnly, i) => {
-      unit = dataOnly.toString().replace(/[^a-z|%]/ig, '');
-    const currentDataOnly = currentDataArr[i];
-    const currentUnit = currentDataOnly.toString().replace(/[^a-z|%]/ig, '');
-    const dataOnlyNumber = parseFloat(dataOnly);
-    const currentDataOnlyNumber = parseFloat(currentDataOnly);
-    const differData = currentUnit !== unit ? dataOnlyNumber : dataOnlyNumber - currentDataOnlyNumber;
-    const _data = differData * data + currentDataOnlyNumber + unit;
-    return _data;
-  });
-  } else {
-    changeDataArr = changeDataArr.map(dataOnly => {
-      unit = dataOnly.toString().replace(/[^a-z|%]/ig, '');
-    return parseFloat(dataOnly) * data + unit;
-  });
-  }
-  return changeOnlyName + '(' + changeDataArr.join(',') + ')';
-});
-  return changeArr.join(' ');
-},
-};
-CSS._lists.transformsBase = !(IE <= 9) ? CSS._lists.transformsBase.concat(CSS._lists.transforms3D) : CSS._lists.transformsBase;
-export default CSS;
+export default cssList;
