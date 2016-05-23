@@ -55,6 +55,7 @@ const cssList = {
     transformsBase: ['translate', 'translateX', 'translateY', 'scale', 'scaleX', 'scaleY', 'skewX', 'skewY', 'rotateZ', 'rotate'],
     transforms3D: ['translate3d', 'translateZ', 'scaleZ', 'rotateX', 'rotateY', 'perspective'],
   },
+  transformGroup: { translate: 1, translate3d: 1, scale: 1, scale3d: 1, rotate: 1, rotate3d: 1 },
   filter: ['grayScale', 'sepia', 'hueRotate', 'invert', 'brightness', 'contrast', 'blur'],
   filterConvert: { grayScale: 'grayscale', hueRotate: 'hue-rotate' },
 };
@@ -314,5 +315,67 @@ export function stylesToCss(key, value) {
 return _value || value;
 }
 
+export function getUnit(p, v) {
+  const currentUnit = v && v.toString().replace(/[^a-z|%]/ig, '');
+  let unit = '';
+  if (p.indexOf('translate') >= 0 || p.indexOf('perspective') >= 0 || p.indexOf('blur') >= 0) {
+    unit = 'px';
+  } else if (p.indexOf('skew') >= 0 || p.indexOf('rotate') >= 0) {
+    unit = 'deg';
+  }
+  return currentUnit || unit;
+}
+
+export function getValues(p, d, u) {
+  return `${p}(${d}${u || ''})`;
+}
+
+export function findStyleByName(cssArray, name) {
+  let ret = null;
+  if (cssArray) {
+    cssArray.forEach(_cname=> {
+      if (ret) {
+      return;
+    }
+    const cName = _cname.split('(')[0];
+    const a = (cName in cssList.transformGroup && name.substring(0, name.length - 1).indexOf(cName) >= 0);
+    const b = (name in cssList.transformGroup && cName.substring(0, cName.length - 1).indexOf(name) >= 0);
+    const c = cName in cssList.transformGroup && name in cssList.transformGroup && (cName.substring(0, cName.length - 2) === name || name.substring(0, name.length - 2) === cName);
+    if (cName === name || a || b || c) {
+      ret = _cname;
+    }
+  });
+  }
+  return ret;
+}
+
+export function mergeStyle(current, change) {
+  if (!current || current === '') {
+    return change;
+  }
+  if (!change || change === '') {
+    return current;
+  }
+  const _current = current.replace(/\s/g, '').split(')').filter(item=>item !== '' && item).map(item => `${item})`);
+const _change = change.replace(/\s/g, '').split(')').filter(item=>item !== '' && item);
+_change.forEach(changeOnly => {
+  const changeArr = changeOnly.split('(');
+const changeName = changeArr[0];
+const currentSame = findStyleByName(_current, changeName);
+if (!currentSame) {
+  _current.push(`${changeOnly})`);
+} else {
+  const index = _current.indexOf(currentSame);
+  _current[index] = `${changeOnly})`;
+}
+});
+_current.forEach((item, i) => {
+  if (item.indexOf('perspective') >= 0 && i) {
+  _current.splice(i, 1);
+  _current.unshift(item);
+}
+});
+return _current.join(' ').trim();
+}
 
 export default cssList;
