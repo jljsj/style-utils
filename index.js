@@ -9,7 +9,7 @@ const IE = (() => {
   if (document.documentMode) {
     return document.documentMode;
   }
-  return undefined;
+  return 0;
 })();
 
 const colorLookup = {
