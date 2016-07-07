@@ -3,18 +3,13 @@ const isUnitlessNumber = CSSProperty.isUnitlessNumber;
 const unquotedContentValueRegex = /^(normal|none|(\b(url\([^)]*\)|chapter_counter|attr\([^)]*\)|(no-)?(open|close)-quote|inherit)((\b\s*)|$|\s+))+)$/;
 
 const IE = (() => {
-    if (document.documentMode) {
-  return document.documentMode;
-}
-for (let i = 7; i > 4; i--) {
-  let div = document.createElement('div');
-  div.innerHTML = '<!--[if IE ' + i + ']><span class="is-ie"></span><![endif]-->';
-  if (div.getElementsByClassName('is-ie').length) {
-    div = null;
-    return i;
+  if (typeof document === 'undefined') {
+    return 0;
   }
-}
-return undefined;
+  if (document.documentMode) {
+    return document.documentMode;
+  }
+  return undefined;
 })();
 
 const colorLookup = {
