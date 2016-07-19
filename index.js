@@ -8,9 +8,9 @@ const IE = (() => {
   }
   if (navigator && (navigator.userAgent.indexOf("MSIE 8.0")>0 ||
     navigator.userAgent.indexOf("MSIE 9.0")>0)) {
-    return false;
+    return true;
   }
-  return true;
+  return false;
 })();
 
 const colorLookup = {
@@ -55,7 +55,7 @@ const cssList = {
   filter: ['grayScale', 'sepia', 'hueRotate', 'invert', 'brightness', 'contrast', 'blur'],
   filterConvert: { grayScale: 'grayscale', hueRotate: 'hue-rotate' },
 };
-cssList._lists.transformsBase = IE ? cssList._lists.transformsBase.concat(cssList._lists.transforms3D) : cssList._lists.transformsBase;
+cssList._lists.transformsBase = !IE ? cssList._lists.transformsBase.concat(cssList._lists.transforms3D) : cssList._lists.transformsBase;
 
 export function createMatrix(style) {
   return (window.WebKitCSSMatrix && new window.WebKitCSSMatrix(style)) ||
