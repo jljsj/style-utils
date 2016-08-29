@@ -72,7 +72,8 @@ export function checkStyleName(p) {
     return p;
   }
   const _p = p.charAt(0).toUpperCase() + p.substr(1);
-  return `${a.filter(key => `${key}${_p}` in document.body.style)[0] || ''}${_p}`;
+  const prefixCss = a.filter(key => `${key}${_p}` in document.body.style);
+  return prefixCss[0] ? `${prefixCss[0]}${_p}` : null;
 }
 
 export function getGsapType(_p) {
