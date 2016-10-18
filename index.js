@@ -81,7 +81,7 @@ export function getGsapType(_p) {
   p = p === 'x' ? 'translateX' : p;
   p = p === 'y' ? 'translateY' : p;
   p = p === 'z' ? 'translateZ' : p;
-  p = p === 'r' ? 'rotate' : p;
+  // p = p === 'r' ? 'rotate' : p;
   return p;
 }
 
