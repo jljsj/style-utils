@@ -203,28 +203,36 @@ export function splitFilterToObject(data) {
 export function getMatrix(t) {
   const arr = t.replace(/[a-z|(|)]/g, '').split(',');
   const m = {};
-  m.m11 = parseFloat(arr[0]);
-  m.m12 = parseFloat(arr[1]);
-  m.m13 = 0;
-  m.m14 = 0;
-  m.m21 = parseFloat(arr[2]);
-  m.m22 = parseFloat(arr[3]);
-  m.m23 = 0;
-  m.m24 = 0;
-  m.m31 = 0;
-  m.m32 = 0;
-  m.m33 = 1;
-  m.m34 = 0;
-  m.m41 = parseFloat(arr[4]);
-  m.m42 = parseFloat(arr[5]);
-  m.m43 = 0;
-  m.m44 = 0;
+  if (arr.length === 6) {
+    m.m11 = parseFloat(arr[0]);
+    m.m12 = parseFloat(arr[1]);
+    m.m13 = 0;
+    m.m14 = 0;
+    m.m21 = parseFloat(arr[2]);
+    m.m22 = parseFloat(arr[3]);
+    m.m23 = 0;
+    m.m24 = 0;
+    m.m31 = 0;
+    m.m32 = 0;
+    m.m33 = 1;
+    m.m34 = 0;
+    m.m41 = parseFloat(arr[4]);
+    m.m42 = parseFloat(arr[5]);
+    m.m43 = 0;
+    m.m44 = 0;
+  } else {
+    arr.forEach((item, i) => {
+      const ii = i % 4 + 1;
+      const j = Math.floor(i / 4) + 1;
+      m[`m${j}${ii}`] = parseFloat(item);
+    })
+  }
   return m;
 }
 
 export function getTransform(transform) {
-  const _transform = transform === 'none' ? 'matrix(1, 0, 0, 1, 0, 0)' : transform;
-  const m = createMatrix(_transform) || getMatrix(_transform);
+  const _transform = transform === 'none' || transform === '' ? 'matrix(1, 0, 0, 1, 0, 0)' : transform;
+  const m = getMatrix(_transform);
   let m11 = m.m11;
   let m12 = m.m12;
   let m13 = m.m13;
