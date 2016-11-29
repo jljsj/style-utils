@@ -108,7 +108,7 @@ const cssList = {
 cssList._lists.transformsBase = !IE ? cssList._lists.transformsBase.concat(cssList._lists.transforms3D) : cssList._lists.transformsBase;
 
 export function toFixed(num, acc) {
-  return ((num * (acc || rnd) + num < 0 ? -0.5 : 0.5 ) | 0) / (acc || rnd);
+  return ((num * (acc || rnd) + (num < 0 ? -0.5 : 0.5)) | 0) / (acc || rnd);
 }
 
 export function createMatrix(style) {
