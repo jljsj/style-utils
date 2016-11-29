@@ -1,11 +1,11 @@
 {
   "name": "style-utils",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "style css for tween-one and queue-anim",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "babel index.js --out-file main.js"
+    "prepublish": "babel index.jsx --out-file main.js"
   },
   "repository": {
     "type": "git",

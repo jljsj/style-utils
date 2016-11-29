@@ -54,12 +54,14 @@ const IE = (() => {
   if (typeof document === 'undefined') {
     return false;
   }
-  if (navigator && (navigator.userAgent.indexOf("MSIE 8.0")>0 ||
-    navigator.userAgent.indexOf("MSIE 9.0")>0)) {
+  if (navigator && (navigator.userAgent.indexOf("MSIE 8.0") > 0 ||
+    navigator.userAgent.indexOf("MSIE 9.0") > 0)) {
     return true;
   }
   return false;
 })();
+
+const rnd = 100000;
 
 const colorLookup = {
   aqua: [0, 255, 255],
@@ -104,6 +106,10 @@ const cssList = {
   filterConvert: { grayScale: 'grayscale', hueRotate: 'hue-rotate' },
 };
 cssList._lists.transformsBase = !IE ? cssList._lists.transformsBase.concat(cssList._lists.transforms3D) : cssList._lists.transformsBase;
+
+export function toFixed5(num) {
+  return ((num * rnd + 0.5) | 0) / rnd;
+}
 
 export function createMatrix(style) {
   return (window.WebKitCSSMatrix && new window.WebKitCSSMatrix(style)) ||
@@ -243,13 +249,13 @@ export function splitFilterToObject(data) {
   const startData = {};
   filter.forEach(item => {
     const dataArr = item.split('(');
-  startData[dataArr[0]] = dataArr[1];
-});
+    startData[dataArr[0]] = dataArr[1];
+  });
   return startData;
 }
 
 export function getMatrix(t) {
-  const arr = t.replace(/[a-z|(|)]/g, '').split(',');
+  const arr = t.match(/(?:\-|\b)[\d\-\.e]+\b/gi);
   const m = {};
   if (arr.length === 6) {
     m.m11 = parseFloat(arr[0]);
@@ -298,11 +304,11 @@ export function getTransform(transform) {
   let t2;
   let t3;
   const tm = {};
-  tm.perspective = m34 ? parseFloat((m33 / (m34 < 0 ? -m34 : m34)).toFixed(3)) : 0;
-  tm.rotateX = parseFloat((Math.asin(m23) * RAD2DEG).toFixed(3));
+  tm.perspective = m34 ? toFixed5(m33 / (m34 < 0 ? -m34 : m34)) : 0;
+  tm.rotateX = toFixed5(Math.asin(m23) * RAD2DEG);
   let angle = tm.rotateX * DEG2RAD;
-  const skewX = Math.tan(m.c);
-  const skewY = Math.tan(m.b);
+  const skewX = Math.tan(m21);
+  const skewY = Math.tan(m12);
   let cos = m34 * tm.perspective;
   let sin;
   // rotateX
@@ -322,7 +328,7 @@ export function getTransform(transform) {
   }
   // rotateY
   angle = Math.atan2(m31, m33);
-  tm.rotateY = angle * RAD2DEG;
+  tm.rotateY = toFixed5(angle * RAD2DEG);
   if (angle) {
     cos = Math.cos(-angle);
     sin = Math.sin(-angle);
@@ -338,7 +344,7 @@ export function getTransform(transform) {
   }
   // rotateZ
   angle = Math.atan2(m12, m11);
-  tm.rotate = angle * RAD2DEG;
+  tm.rotate = toFixed5(angle * RAD2DEG);
   if (angle) {
     cos = Math.cos(-angle);
     sin = Math.sin(-angle);
@@ -353,10 +359,9 @@ export function getTransform(transform) {
     tm.rotateX = tm.rotate = 0;
     tm.rotateY += 180;
   }
-  const rnd = 100000;
-  tm.scaleX = ((Math.sqrt(m11 * m11 + m12 * m12) * rnd + 0.5) | 0) / rnd;
-  tm.scaleY = ((Math.sqrt(m22 * m22 + m32 * m32) * rnd + 0.5) | 0) / rnd;
-  tm.scaleZ = ((Math.sqrt(m23 * m23 + m33 * m33) * rnd + 0.5) | 0) / rnd;
+  tm.scaleX = toFixed5(Math.sqrt(m11 * m11 + m12 * m12));
+  tm.scaleY = toFixed5(Math.sqrt(m22 * m22 + m32 * m32));
+  tm.scaleZ = toFixed5(Math.sqrt(m23 * m23 + m33 * m33));
   // 不管 skewX skewY了；
   tm.skewX = skewX === -skewY ? 0 : skewX;
   tm.skewY = skewY === -skewX ? 0 : skewY;
@@ -373,8 +378,8 @@ export function stylesToCss(key, value) {
     _value = ` ${value}px`;
   } else if (key === 'content' && !unquotedContentValueRegex.test(value)) {
     _value = `'${value.replace(/'/g, "\\'")}'`;
-}
-return _value || value;
+  }
+  return _value || value;
 }
 
 export function getUnit(p, v) {
@@ -397,16 +402,16 @@ export function findStyleByName(cssArray, name) {
   if (cssArray) {
     cssArray.forEach(_cname=> {
       if (ret) {
-      return;
-    }
-    const cName = _cname.split('(')[0];
-    const a = (cName in cssList.transformGroup && name.substring(0, name.length - 1).indexOf(cName) >= 0);
-    const b = (name in cssList.transformGroup && cName.substring(0, cName.length - 1).indexOf(name) >= 0);
-    const c = cName in cssList.transformGroup && name in cssList.transformGroup && (cName.substring(0, cName.length - 2) === name || name.substring(0, name.length - 2) === cName);
-    if (cName === name || a || b || c) {
-      ret = _cname;
-    }
-  });
+        return;
+      }
+      const cName = _cname.split('(')[0];
+      const a = (cName in cssList.transformGroup && name.substring(0, name.length - 1).indexOf(cName) >= 0);
+      const b = (name in cssList.transformGroup && cName.substring(0, cName.length - 1).indexOf(name) >= 0);
+      const c = cName in cssList.transformGroup && name in cssList.transformGroup && (cName.substring(0, cName.length - 2) === name || name.substring(0, name.length - 2) === cName);
+      if (cName === name || a || b || c) {
+        ret = _cname;
+      }
+    });
   }
   return ret;
 }
@@ -419,25 +424,25 @@ export function mergeStyle(current, change) {
     return current;
   }
   const _current = current.replace(/\s/g, '').split(')').filter(item=>item !== '' && item).map(item => `${item})`);
-const _change = change.replace(/\s/g, '').split(')').filter(item=>item !== '' && item);
-_change.forEach(changeOnly => {
-  const changeArr = changeOnly.split('(');
-const changeName = changeArr[0];
-const currentSame = findStyleByName(_current, changeName);
-if (!currentSame) {
-  _current.push(`${changeOnly})`);
-} else {
-  const index = _current.indexOf(currentSame);
-  _current[index] = `${changeOnly})`;
-}
-});
-_current.forEach((item, i) => {
-  if (item.indexOf('perspective') >= 0 && i) {
-  _current.splice(i, 1);
-  _current.unshift(item);
-}
-});
-return _current.join(' ').trim();
+  const _change = change.replace(/\s/g, '').split(')').filter(item=>item !== '' && item);
+  _change.forEach(changeOnly => {
+    const changeArr = changeOnly.split('(');
+    const changeName = changeArr[0];
+    const currentSame = findStyleByName(_current, changeName);
+    if (!currentSame) {
+      _current.push(`${changeOnly})`);
+    } else {
+      const index = _current.indexOf(currentSame);
+      _current[index] = `${changeOnly})`;
+    }
+  });
+  _current.forEach((item, i) => {
+    if (item.indexOf('perspective') >= 0 && i) {
+      _current.splice(i, 1);
+      _current.unshift(item);
+    }
+  });
+  return _current.join(' ').trim();
 }
 
 export default cssList;
