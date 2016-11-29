@@ -107,8 +107,8 @@ const cssList = {
 };
 cssList._lists.transformsBase = !IE ? cssList._lists.transformsBase.concat(cssList._lists.transforms3D) : cssList._lists.transformsBase;
 
-export function toFixed5(num) {
-  return ((num * rnd + 0.5) | 0) / rnd;
+export function toFixed(num, acc) {
+  return ((num * (acc || rnd) + num < 0 ? -0.5 : 0.5 ) | 0) / (acc || rnd);
 }
 
 export function createMatrix(style) {
@@ -304,8 +304,8 @@ export function getTransform(transform) {
   let t2;
   let t3;
   const tm = {};
-  tm.perspective = m34 ? toFixed5(m33 / (m34 < 0 ? -m34 : m34)) : 0;
-  tm.rotateX = toFixed5(Math.asin(m23) * RAD2DEG);
+  tm.perspective = m34 ? toFixed(m33 / (m34 < 0 ? -m34 : m34)) : 0;
+  tm.rotateX = toFixed(Math.asin(m23) * RAD2DEG);
   let angle = tm.rotateX * DEG2RAD;
   const skewX = Math.tan(m21);
   const skewY = Math.tan(m12);
@@ -328,7 +328,7 @@ export function getTransform(transform) {
   }
   // rotateY
   angle = Math.atan2(m31, m33);
-  tm.rotateY = toFixed5(angle * RAD2DEG);
+  tm.rotateY = toFixed(angle * RAD2DEG);
   if (angle) {
     cos = Math.cos(-angle);
     sin = Math.sin(-angle);
@@ -344,7 +344,7 @@ export function getTransform(transform) {
   }
   // rotateZ
   angle = Math.atan2(m12, m11);
-  tm.rotate = toFixed5(angle * RAD2DEG);
+  tm.rotate = toFixed(angle * RAD2DEG);
   if (angle) {
     cos = Math.cos(-angle);
     sin = Math.sin(-angle);
@@ -359,9 +359,9 @@ export function getTransform(transform) {
     tm.rotateX = tm.rotate = 0;
     tm.rotateY += 180;
   }
-  tm.scaleX = toFixed5(Math.sqrt(m11 * m11 + m12 * m12));
-  tm.scaleY = toFixed5(Math.sqrt(m22 * m22 + m32 * m32));
-  tm.scaleZ = toFixed5(Math.sqrt(m23 * m23 + m33 * m33));
+  tm.scaleX = toFixed(Math.sqrt(m11 * m11 + m12 * m12));
+  tm.scaleY = toFixed(Math.sqrt(m22 * m22 + m32 * m32));
+  tm.scaleZ = toFixed(Math.sqrt(m23 * m23 + m33 * m33));
   // 不管 skewX skewY了；
   tm.skewX = skewX === -skewY ? 0 : skewX;
   tm.skewY = skewY === -skewX ? 0 : skewY;
