@@ -115,6 +115,9 @@ export function toFixed(num, length) {
 }
 
 export function createMatrix(style) {
+  if (typeof document === 'undefined') {
+    return null;
+  }
   return (window.WebKitCSSMatrix && new window.WebKitCSSMatrix(style)) ||
     (window.MozCSSMatrix && new window.MozCSSMatrix(style)) ||
     (window.DOMMatrix && new window.DOMMatrix(style)) ||
@@ -124,6 +127,9 @@ export function createMatrix(style) {
 }
 
 export function checkStyleName(p) {
+  if (typeof document === 'undefined') {
+    return null;
+  }
   const a = ['O', 'Moz', 'ms', 'Ms', 'Webkit'];
   if (p !== 'filter' && p in document.body.style) {
     return p;
