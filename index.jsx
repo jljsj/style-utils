@@ -294,7 +294,7 @@ export function getMatrix(t) {
 }
 
 export function getTransform(transform) {
-  const _transform = transform === 'none' || transform === '' ? 'matrix(1, 0, 0, 1, 0, 0)' : transform;
+  const _transform = !transform || transform === 'none' || transform === '' ? 'matrix(1, 0, 0, 1, 0, 0)' : transform;
   const m = getMatrix(_transform);
   let m11 = m.m11;
   let m12 = m.m12;
