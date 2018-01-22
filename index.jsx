@@ -85,7 +85,7 @@ const colorLookup = {
   cyan: [0, 255, 255],
   transparent: [255, 255, 255, 0],
 };
-const _hue = (hh, m1, m2)=> {
+const _hue = (hh, m1, m2) => {
   let h = (hh > 1) ? hh - 1 : hh;
   h = (hh < 0) ? hh + 1 : h;
   const a = (h * 3 < 2) ? m1 + (m2 - m1) * (2 / 3 - h) * 6 : m1;
@@ -118,12 +118,13 @@ export function createMatrix(style) {
   if (typeof document === 'undefined') {
     return null;
   }
-  return (window.WebKitCSSMatrix && new window.WebKitCSSMatrix(style)) ||
-    (window.MozCSSMatrix && new window.MozCSSMatrix(style)) ||
-    (window.DOMMatrix && new window.DOMMatrix(style)) ||
-    (window.MsCSSMatrix && new window.MsCSSMatrix(style)) ||
-    (window.OCSSMatrix && new window.OCSSMatrix(style)) ||
-    (window.CSSMatrix && new window.CSSMatrix(style)) || null;
+  const matrixs = ['WebKitCSS', 'MozCSS', 'DOM', 'MsCSS', 'MSCSS', 'OCSS', 'CSS']
+    .filter(key => `${key}Matrix` in window);
+  if (matrixs.length) {
+    return new window[`${matrixs[0]}Matrix`](style);
+  }
+  console.warn('Browsers do not support matrix.');
+  return '';
 }
 
 export function checkStyleName(p) {
@@ -409,7 +410,7 @@ export function getValues(p, d, u) {
 export function findStyleByName(cssArray, name) {
   let ret = null;
   if (cssArray) {
-    cssArray.forEach(_cname=> {
+    cssArray.forEach(_cname => {
       if (ret) {
         return;
       }
@@ -432,8 +433,8 @@ export function mergeStyle(current, change) {
   if (!change || change === '') {
     return current;
   }
-  const _current = current.replace(/\s/g, '').split(')').filter(item=>item !== '' && item).map(item => `${item})`);
-  const _change = change.replace(/\s/g, '').split(')').filter(item=>item !== '' && item);
+  const _current = current.replace(/\s/g, '').split(')').filter(item => item !== '' && item).map(item => `${item})`);
+  const _change = change.replace(/\s/g, '').split(')').filter(item => item !== '' && item);
   _change.forEach(changeOnly => {
     const changeArr = changeOnly.split('(');
     const changeName = changeArr[0];
