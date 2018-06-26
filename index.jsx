@@ -111,7 +111,13 @@ export function toFixed(num, length) {
   const _rnd = length ? Math.pow(10, length) : rnd;
   const n = num | 0;
   const dec = num - n;
-  return dec ? ((dec * _rnd + (num < 0 ? -0.5 : 0.5)) | 0) / _rnd + n : num;
+  let fixed = num;
+  if (dec) {
+    const str = (((dec * _rnd + (num < 0 ? -0.5 : 0.5)) | 0) / _rnd).toString();
+    const decStr = str.substring(2, str.length);
+    fixed = `${n}.${decStr}`;
+  }
+  return parseFloat(fixed);
 }
 
 export function createMatrix(style) {
