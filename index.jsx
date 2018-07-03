@@ -113,9 +113,11 @@ export function toFixed(num, length) {
   const dec = num - n;
   let fixed = num;
   if (dec) {
-    const str = (((dec * _rnd + (num < 0 ? -0.5 : 0.5)) | 0) / _rnd).toString();
+    const r = ((dec * _rnd + (num < 0 ? -0.5 : 0.5) | 0) / _rnd);
+    const t = r | 0;
+    const str = r.toString();
     const decStr = str.substring(2, str.length);
-    fixed = `${n}.${decStr}`;
+    fixed = `${n + t}.${decStr}`;
   }
   return parseFloat(fixed);
 }
