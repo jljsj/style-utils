@@ -320,14 +320,13 @@ export function getTransform(transform) {
   let t2;
   let t3;
   const tm = {};
-  tm.perspective = m34 ? toFixed(m33 / (m34 < 0 ? -m34 : m34)) : 0;
-  tm.rotateX = toFixed(Math.asin(m23) * RAD2DEG);
-  let angle = tm.rotateX * DEG2RAD;
+  let angle = Math.atan2(m23, m33);
   const skewX = Math.tan(m21);
   const skewY = Math.tan(m12);
-  let cos = m34 * tm.perspective;
+  let cos;
   let sin;
   // rotateX
+  tm.rotateX = toFixed(angle * RAD2DEG) || 0;
   if (angle) {
     cos = Math.cos(-angle);
     sin = Math.sin(-angle);
@@ -343,8 +342,8 @@ export function getTransform(transform) {
     m23 = t3;
   }
   // rotateY
-  angle = Math.atan2(m31, m33);
-  tm.rotateY = toFixed(angle * RAD2DEG);
+  angle = Math.atan2(-m13, m33);
+  tm.rotateY = toFixed(angle * RAD2DEG) || 0;
   if (angle) {
     cos = Math.cos(-angle);
     sin = Math.sin(-angle);
@@ -360,24 +359,28 @@ export function getTransform(transform) {
   }
   // rotateZ
   angle = Math.atan2(m12, m11);
-  tm.rotate = toFixed(angle * RAD2DEG);
+  tm.rotate = toFixed(angle * RAD2DEG) || 0;
   if (angle) {
-    cos = Math.cos(-angle);
-    sin = Math.sin(-angle);
-    m11 = m11 * cos + m21 * sin;
-    t2 = m12 * cos + m22 * sin;
-    m22 = m12 * -sin + m22 * cos;
-    m23 = m13 * -sin + m23 * cos;
-    m12 = t2;
+    cos = Math.cos(angle);
+    sin = Math.sin(angle);
+    t1 = m11 * cos + m12 * sin;
+    t2 = m21 * cos + m22 * sin;
+    t3 = m31 * cos + m32 * sin;
+    m12 = m12 * cos - m11 * sin;
+    m22 = m22 * cos - m21 * sin;
+    m32 = m32 * cos - m31 * sin;
+    m11 = t1;
+    m21 = t2;
+    m31 = t3;
   }
 
   if (tm.rotateX && Math.abs(tm.rotateX) + Math.abs(tm.rotate) > 359.9) {
     tm.rotateX = tm.rotate = 0;
-    tm.rotateY += 180;
+    tm.rotateY = (180 - tm.rotateY) || 0;
   }
-  tm.scaleX = toFixed(Math.sqrt(m11 * m11 + m12 * m12));
-  tm.scaleY = toFixed(Math.sqrt(m22 * m22 + m32 * m32));
-  tm.scaleZ = toFixed(Math.sqrt(m23 * m23 + m33 * m33));
+  tm.scaleX = toFixed(Math.sqrt(m11 * m11 + m12 * m12 + m13 * m13));
+  tm.scaleY = toFixed(Math.sqrt(m22 * m22 + m23 * m23));
+  tm.scaleZ = toFixed(Math.sqrt(m31 * m31 + m32 * m32 + m33 * m33));
   // 不管 skewX skewY了；
   tm.skewX = skewX === -skewY ? 0 : skewX;
   tm.skewY = skewY === -skewX ? 0 : skewY;
