@@ -380,6 +380,9 @@ export function getTransform(transform) {
     tm.rotateX = tm.rotate = 0;
     tm.rotateY = (180 - tm.rotateY) || 0;
   }
+  tm.rotateX = tm.rotateX < 0 ? 360 + tm.rotateX : tm.rotateX;
+  tm.rotateY = tm.rotateY < 0 ? 360 + tm.rotateY : tm.rotateY;
+  tm.rotate = tm.rotate < 0 ? 360 + tm.rotate : tm.rotate;
   tm.scaleX = toFixed(Math.sqrt(m11 * m11 + m12 * m12 + m13 * m13));
   tm.scaleY = toFixed(Math.sqrt(m22 * m22 + m23 * m23));
   tm.scaleZ = toFixed(Math.sqrt(m31 * m31 + m32 * m32 + m33 * m33));

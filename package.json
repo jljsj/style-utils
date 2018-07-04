@@ -1,6 +1,6 @@
 {
   "name": "style-utils",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "style css for tween-one and queue-anim",
   "main": "main.js",
   "scripts": {
