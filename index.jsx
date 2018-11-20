@@ -101,7 +101,7 @@ const cssList = {
     transformsBase: ['translate', 'translateX', 'translateY', 'scale', 'scaleX', 'scaleY', 'skewX', 'skewY', 'rotateZ', 'rotate'],
     transforms3D: ['translate3d', 'translateZ', 'scaleZ', 'rotateX', 'rotateY', 'perspective'],
   },
-  transformGroup: { translate: 1, translate3d: 1, scale: 1, scale3d: 1, rotate: 1, rotate3d: 1 },
+  transformGroup: { translate: 1, translate3d: 1, scale: 1, scale3d: 1, rotate: 1, rotate3d: 1, skew: 1 },
   filter: ['grayScale', 'sepia', 'hueRotate', 'invert', 'brightness', 'contrast', 'blur'],
   filterConvert: { grayScale: 'grayscale', hueRotate: 'hue-rotate' },
 };
@@ -302,8 +302,60 @@ export function getMatrix(t) {
   return m;
 }
 
+function transformNoMatrix(transform) {
+  const tm = {};
+  tm.translateX = 0;
+  tm.translateY = 0;
+  tm.translateZ = 0;
+  tm.rotate = 0;
+  tm.rotateX = 0;
+  tm.rotateY = 0;
+  tm.scaleX = 1;
+  tm.scaleY = 1;
+  tm.scaleZ = 1;
+  tm.skewX = 0;
+  tm.skewY = 0;
+  tm.perspective = 0;
+  (transform.trim().match(/(\w+)\([^\)]+\)/ig) || []).forEach((str) => {
+    const strArray = str.split('(');
+    const key = strArray[0].trim();
+    let value = strArray[1].replace(')', '').trim()
+    if (value.match(/%|em|rem/ig)) {
+      console.warn(`value(${value}) must be absolute, not relative, has been converted to absolute.`);
+    }
+    value = value.replace(/px|deg|\)/ig, '');
+    if (cssList.transformGroup[key] && key !== 'rotate') {
+      value = value.split(',').map(num => parseFloat(num));
+      if (key === 'scale3d' || key === 'translate3d') {
+        ['X', 'Y', 'Z'].forEach((s, i) => {
+          const $key = key.substring(0, key.length - 2);
+          tm[`${$key}${s}`] = value[i] || tm[`${$key}${s}`];
+        });
+      } else if (key === 'rotate3d') {
+        tm.rotateX = value[0] && value[3] || tm.rotateX;
+        tm.rotateY = value[1] && value[3] || tm.rotateY;
+        tm.rotate = value[2] && value[3] || tm.rotate;
+      } else {
+        ['X', 'Y'].forEach((s, i) => {
+          tm[`${key}${s}`] = value[i] || tm[`${key}${s}`];
+        });
+      }
+    } else {
+      if (key === 'rotateZ') {
+        tm.rotate = parseFloat(value) || tm.rotate;
+      } else {
+        tm[key] = parseFloat(value) || tm[key];
+      }
+    }
+  });
+  return tm;
+}
+
 export function getTransform(transform) {
   const _transform = !transform || transform === 'none' || transform === '' ? 'matrix(1, 0, 0, 1, 0, 0)' : transform;
+  if (!_transform.match('matrix')) {
+    return transformNoMatrix(transform);
+  }
   const m = getMatrix(_transform);
   let m11 = m.m11;
   let m12 = m.m12;
@@ -380,7 +432,7 @@ export function getTransform(transform) {
     tm.rotateX = tm.rotate = 0;
     tm.rotateY = (180 - tm.rotateY) || 0;
   }
-  
+
   tm.scaleX = toFixed(Math.sqrt(m11 * m11 + m12 * m12 + m13 * m13));
   tm.scaleY = toFixed(Math.sqrt(m22 * m22 + m23 * m23));
   tm.scaleZ = toFixed(Math.sqrt(m31 * m31 + m32 * m32 + m33 * m33));
