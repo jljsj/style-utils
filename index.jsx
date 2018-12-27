@@ -117,7 +117,7 @@ export function toFixed(num, length) {
     const t = r | 0;
     const str = r.toString();
     const decStr = str.split('.')[1] || '';
-    fixed = `${n + t}.${decStr}`;
+    fixed = `${num < 0 && !(n + t) ? '-' : ''}${n + t}.${decStr}`;
   }
   return parseFloat(fixed);
 }
