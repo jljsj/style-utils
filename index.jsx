@@ -116,7 +116,7 @@ export function toFixed(num, length) {
     const r = ((dec * _rnd + (num < 0 ? -0.5 : 0.5) | 0) / _rnd);
     const t = r | 0;
     const str = r.toString();
-    const decStr = str.substring(2, str.length);
+    const decStr = str.split('.')[1] || '';
     fixed = `${n + t}.${decStr}`;
   }
   return parseFloat(fixed);
