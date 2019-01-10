@@ -96,7 +96,7 @@ const _hue = (hh, m1, m2) => {
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 
-const cssList = {
+const $cssList = {
   _lists: {
     transformsBase: ['translate', 'translateX', 'translateY', 'scale', 'scaleX', 'scaleY', 'skewX', 'skewY', 'rotateZ', 'rotate'],
     transforms3D: ['translate3d', 'translateZ', 'scaleZ', 'rotateX', 'rotateY', 'perspective'],
@@ -105,7 +105,17 @@ const cssList = {
   filter: ['grayScale', 'sepia', 'hueRotate', 'invert', 'brightness', 'contrast', 'blur'],
   filterConvert: { grayScale: 'grayscale', hueRotate: 'hue-rotate' },
 };
-cssList._lists.transformsBase = !IE ? cssList._lists.transformsBase.concat(cssList._lists.transforms3D) : cssList._lists.transformsBase;
+$cssList._lists.transformsBase = !IE ? $cssList._lists.transformsBase.concat($cssList._lists.transforms3D) : $cssList._lists.transformsBase;
+
+export const cssList = $cssList;
+
+export function toCssLowerCase(d) {
+  return d.replace(/[A-Z]/, ($1) => (`-${$1.toLocaleLowerCase()}`));
+}
+
+export function toStyleUpperCase(d) {
+  return d.replace(/-(.?)/g, ($1) => ($1.replace('-', '').toLocaleUpperCase()));
+}
 
 export function toFixed(num, length) {
   const _rnd = length ? Math.pow(10, length) : rnd;
@@ -518,5 +528,3 @@ export function mergeStyle(current, change) {
   });
   return _current.join(' ').trim();
 }
-
-export default cssList;
