@@ -229,28 +229,23 @@ export function parseShadow(v) {
   if (!v) {
     return [0, 0, 0, 0, 0, 0, 0];
   }
-  let inset;
-  if (v.indexOf('rgb') >= 0) {
-    const t = v.match(/rgb+(?:a)?\((.*)\)/);
-    const s = v.replace(t[0], '').trim().split(/\s+/);
-    inset = s.indexOf('inset');
-    if (inset >= 0) {
-      s.splice(inset, 1);
-    }
-    const c = t[1].replace(/\s+/g, '').split(',');
-    if (c.length === 3) {
-      c.push(1);
-    }
-    return s.concat(c, inset >= 0 ? ['inset'] : []);
-  }
-  let vArr = v.split(/\s+/);
-  inset = vArr.indexOf('inset');
+  let vArr = v.replace(/,\s+/gi, ',').split(/\s+/).filter(c => c);
+  const inset = vArr.indexOf('inset');
   if (inset >= 0) {
     vArr.splice(inset, 1);
   }
-  const color = parseColor(vArr[vArr.length - 1]);
+  const colorStr =
+    vArr.find(
+      c =>
+        colorLookup[c] ||
+        c.match(
+          /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})|(rgb|hsl)+(?:a)?\((.*)\)/i,
+        ),
+    ) || 'black';
+  const colorIndex = vArr.indexOf(colorStr);
+  vArr.splice(colorIndex, 1);
+  const color = parseColor(colorStr);
   color[3] = typeof color[3] === 'number' ? color[3] : 1;
-  vArr = vArr.splice(0, vArr.length - 1);
   return vArr.concat(color, inset >= 0 ? ['inset'] : []);
 }
 
