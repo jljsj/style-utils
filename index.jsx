@@ -225,11 +225,22 @@ export function parseColor(_v) {
 }
 
 
-export function parseShadow(v) {
+export function parseShadow(v, key) {
+  /**
+   * text-shadow: x y blur color;
+   * box-shadow: x y blur spread color inset;
+   */
+  const textKey = toStyleUpperCase(key);
   if (!v) {
+    if (textKey === 'boxShadow') {
+      return [0, 0, 0, 0, 0, 0, 0, 0];//0.85
+    }
     return [0, 0, 0, 0, 0, 0, 0];
   }
-  let vArr = v.replace(/,\s+/gi, ',').split(/\s+/).filter(c => c);
+  let vArr = v
+    .replace(/,\s+/gi, ',')
+    .split(/\s+/)
+    .filter(c => c);
   const inset = vArr.indexOf('inset');
   if (inset >= 0) {
     vArr.splice(inset, 1);
@@ -238,14 +249,15 @@ export function parseShadow(v) {
     vArr.find(
       c =>
         colorLookup[c] ||
-        c.match(
-          /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})|(rgb|hsl)+(?:a)?\((.*)\)/i,
-        ),
+        c.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})|(rgb|hsl)+(?:a)?\((.*)\)/i),
     ) || 'black';
   const colorIndex = vArr.indexOf(colorStr);
   vArr.splice(colorIndex, 1);
   const color = parseColor(colorStr);
   color[3] = typeof color[3] === 'number' ? color[3] : 1;
+  if (textKey === 'boxShadow' && vArr.length < 4) {
+    vArr.push(0);
+  }
   return vArr.concat(color, inset >= 0 ? ['inset'] : []);
 }
 
