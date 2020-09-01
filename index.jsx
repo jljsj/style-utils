@@ -230,7 +230,7 @@ export function parseShadow(v, key) {
    * text-shadow: x y blur color;
    * box-shadow: x y blur spread color inset;
    */
-  const textKey = toStyleUpperCase(key);
+  const textKey = key && toStyleUpperCase(key);
   if (!v) {
     if (textKey === 'boxShadow') {
       return [0, 0, 0, 0, 0, 0, 0, 0];//0.85
