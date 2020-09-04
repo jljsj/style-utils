@@ -196,7 +196,7 @@ export function parseColor(_v) {
         v = '#' + r + r + g + g + b + b;
       }
       v = parseInt(v.substr(1), 16);
-      a = [v >> 16, (v >> 8) & 255, v & 255];
+      a = [v >> 16, (v >> 8) & 255, v & 255, 1];
     } else if (v.substr(0, 3) === 'hsl') {
       a = v.match(_numExp);
       h = (Number(a[0]) % 360) / 360;
@@ -219,6 +219,8 @@ export function parseColor(_v) {
 
     if (a.length > 3) {
       a[3] = Number(a[3]);
+    } else {
+      a[3] = 1;
     }
   }
   return a;
