@@ -282,7 +282,7 @@ export function splitFilterToObject(data) {
   if (data === 'none' || !data || data === '') {
     return null;
   }
-  const filter = data.replace(' ', '').split(')').filter(item => item);
+  const filter = data.replace(/\s+/g, '').split(')').filter(item => item);
   const startData = {};
   filter.forEach(item => {
     const dataArr = item.split('(');
