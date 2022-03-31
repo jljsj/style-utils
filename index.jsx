@@ -104,7 +104,7 @@ export const hexExp = /#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3})/;
 
 export const rgbAndHslExp = /((rgb|hsl)[a]?)+\((?:\d|\.\d)+(?:(deg|\%|)),[\s+]?(?:\d|\.\d)+(?:(deg|\%|)),[\s+]?(?:\d|\.\d)+(?:(deg|%|))(,[\s+]?(?:\d|\.\d)+(?:(deg|\%|)))?\)/;
 
-export const colorRegExp = /#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3})|((rgb|hsl)[a]?)+\((?:\d|\.\d)+(?:(deg|\%|)),[\s+]?(?:\d|\.\d)+(?:(deg|\%|)),[\s+]?(?:\d|\.\d)+(?:(deg|%|))(,[\s+]?(?:\d|\.\d)+(?:(deg|\%|)))?\)/;
+export const colorRegExp = /#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3})|((rgb|hsl)[a]?)+\((?:\d|\.\d)+(?:(deg|\%)?),[\s+]?(?:\d|\.\d)+(?:(deg|\%)?),[\s+]?(?:\d|\.\d)+(?:(deg|%)?)(,[\s+]?(?:\d|\.\d)+(?:(deg|\%)?))?\)/;
 
 export const colorNumExp = /(?:\d|\.\d)+(%?)/g;
 
