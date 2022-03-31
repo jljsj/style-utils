@@ -85,14 +85,7 @@ const colorLookup = {
   cyan: [0, 255, 255, 1],
   transparent: [255, 255, 255, 0],
 };
-const _hue = (hh, m1, m2) => {
-  let h = (hh > 1) ? hh - 1 : hh;
-  h = (hh < 0) ? hh + 1 : h;
-  const a = (h * 3 < 2) ? m1 + (m2 - m1) * (2 / 3 - h) * 6 : m1;
-  const b = (h < 0.5) ? m2 : a;
-  const c = (h * 6 < 1) ? m1 + (m2 - m1) * h * 6 : b;
-  return (c * 255 + 0.5) | 0;
-};
+
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 
@@ -106,6 +99,14 @@ const $cssList = {
   filterConvert: { grayScale: 'grayscale', hueRotate: 'hue-rotate' },
 };
 $cssList._lists.transformsBase = !IE ? $cssList._lists.transformsBase.concat($cssList._lists.transforms3D) : $cssList._lists.transformsBase;
+
+export const hexExp = /#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3})/;
+
+export const rgbAndHslExp = /((rgb|hsl)[a]?)+\((?:\d|\.\d)+(?:(deg|\%|)),[\s+]?(?:\d|\.\d)+(?:(deg|\%|)),[\s+]?(?:\d|\.\d)+(?:(deg|%|))(,[\s+]?(?:\d|\.\d)+(?:(deg|\%|)))?\)/;
+
+export const colorRegExp = /#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3})|((rgb|hsl)[a]?)+\((?:\d|\.\d)+(?:(deg|\%|)),[\s+]?(?:\d|\.\d)+(?:(deg|\%|)),[\s+]?(?:\d|\.\d)+(?:(deg|%|))(,[\s+]?(?:\d|\.\d)+(?:(deg|\%|)))?\)/;
+
+export const colorNumExp = /(?:\d|\.\d)+(%?)/g;
 
 export const cssList = $cssList;
 
@@ -167,65 +168,78 @@ export function getGsapType(_p) {
   return p;
 }
 
-export function parseColor(_v) {
-  let a;
+// href: https://www.w3schools.com/lib/w3color.js
+const hueToRgb = (t1, t2, hue) => {
+  if (hue < 0) hue += 6;
+  if (hue >= 6) hue -= 6;
+  if (hue < 1) return (t2 - t1) * hue + t1;
+  else if (hue < 3) return t2;
+  else if (hue < 4) return (t2 - t1) * (4 - hue) + t1;
+  else return t1;
+};
+
+export function parseColor(value) {
+  let colorArray = colorLookup.transparent;
+  let color = value;
   let r;
   let g;
   let b;
-  let h;
-  let s;
-  let l;
-  let v = _v;
-  const _numExp = /(?:\d|\-\d|\.\d|\-\.\d)+/g;
-  if (!v) {
-    a = colorLookup.black;
-  } else if (typeof v === 'number') {
-    a = [v >> 16, (v >> 8) & 255, v & 255];
+  if (!color) {
+    colorArray = colorLookup.transparent;
+  } else if (colorLookup[color]) {
+    colorArray = colorLookup[color];
+  } else if (typeof color === 'number') {
+    colorArray = [color >> 16, (color >> 8) & 255, color & 255];
   } else {
-    if (v.charAt(v.length - 1) === ',') {
-      v = v.substr(0, v.length - 1);
+    if (color.charAt(color.length - 1) === ',') {
+      color = color.substr(0, color.length - 1);
     }
-    if (colorLookup[v]) {
-      a = colorLookup[v];
-    } else if (v.charAt(0) === '#') {
+    if (color.match(hexExp)) {
+      color = color.substr(1);
       // is #FFF
-      if (v.length === 4) {
-        r = v.charAt(1);
-        g = v.charAt(2);
-        b = v.charAt(3);
-        v = '#' + r + r + g + g + b + b;
+      if (color.length === 3) {
+        r = color.charAt(1);
+        g = color.charAt(2);
+        b = color.charAt(3);
+        color = `${r}${r}${g}${g}${b}${b}ff`;
       }
-      v = parseInt(v.substr(1), 16);
-      a = [v >> 16, (v >> 8) & 255, v & 255, 1];
-    } else if (v.substr(0, 3) === 'hsl') {
-      a = v.match(_numExp);
-      h = (Number(a[0]) % 360) / 360;
-      s = Number(a[1]) / 100;
-      l = Number(a[2]) / 100;
-      g = (l <= 0.5) ? l * (s + 1) : l + s - l * s;
-      r = l * 2 - g;
-      if (a.length > 3) {
-        a[3] = Number(a[3]);
+      if (color.length === 6) {
+        color += 'ff';
       }
-      a[0] = _hue(h + 1 / 3, r, g);
-      a[1] = _hue(h, r, g);
-      a[2] = _hue(h - 1 / 3, r, g);
+      color = parseInt(color, 16);
+      colorArray = [
+        (color >> 24) & 255,
+        (color >> 16) & 255,
+        (color >> 8) & 255,
+        parseFloat(((color & 255) / 255).toFixed(2)),
+      ];
+    } else if (color.match(/^hsl/)) {
+      colorArray = color.match(colorNumExp);
+      let alpha = colorArray[3];
+      alpha =
+        typeof alpha === 'string' && alpha.match('%')
+          ? parseFloat(alpha) / 100
+          : parseFloat(`${alpha || '1'}`);
+      const hue = parseFloat(colorArray[0]) / 60;
+      const sat = parseFloat(colorArray[1]) / 100;
+      const light = parseFloat(colorArray[2]) / 100;
+      const t2 = light <= 0.5 ? light * (sat + 1) : light + sat - light * sat
+      const t1 = light * 2 - t2;
+      r = Math.round(hueToRgb(t1, t2, hue + 2) * 255);
+      g = Math.round(hueToRgb(t1, t2, hue) * 255);
+      b = Math.round(hueToRgb(t1, t2, hue - 2) * 255);
+      colorArray = [r, g, b, alpha];
     } else {
-      a = v.match(_numExp) || colorLookup.transparent;
-    }
-    a[0] = Number(a[0]);
-    a[1] = Number(a[1]);
-    a[2] = Number(a[2]);
-
-    if (a.length > 3) {
-      a[3] = Number(a[3]);
-    } else {
-      a[3] = 1;
+      // rgb(a?) 拆分
+      colorArray = color.match(colorNumExp) || colorLookup.transparent;
+      colorArray = colorArray.map(c => parseFloat(c));
+      if (colorArray.length === 3) {
+        colorArray.push(1)
+      }
     }
   }
-  return a;
+  return colorArray;
 }
-
 
 export function parseShadow(v, key) {
   /**
