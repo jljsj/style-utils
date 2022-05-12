@@ -198,9 +198,9 @@ export function parseColor(value) {
       color = color.substr(1);
       // is #FFF
       if (color.length === 3) {
-        r = color.charAt(1);
-        g = color.charAt(2);
-        b = color.charAt(3);
+        r = color.charAt(0);
+        g = color.charAt(1);
+        b = color.charAt(2);
         color = `${r}${r}${g}${g}${b}${b}ff`;
       }
       if (color.length === 6) {
